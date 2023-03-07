@@ -1,5 +1,6 @@
 # Configuration pour MSYS 2
 # Peut être modifié à votre convenance...
+CXX=mpic++
 CXXFLAGS = -std=c++17
 ifdef DEBUG
 CXXFLAGS += -g -O0 -Wall -fbounds-check -pedantic -fsanitize=address -fopenmp

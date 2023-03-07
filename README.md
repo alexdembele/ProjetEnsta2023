@@ -97,6 +97,8 @@ On peut également paralléliser les boucles prenant du temps dans l'affichage. 
 
 Mesurez l'accélération obtenue localement sur un ordinateur et si possible en utilisant deux ordinateurs.
 
+MPI_Init_Thread(argc,arg, int required, int* provided)
+
 ### Parallélisation en mémoire distribuée et partagée des calculs
 
 Nous allons faire une distribution équilibrée des particules parmis les processus ayant pour tâche le calcul. Paralléliser ensuite à l'aide de MPI le calcul du déplacement des particules.
