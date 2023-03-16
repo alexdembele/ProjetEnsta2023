@@ -1,6 +1,6 @@
 #include <SFML/Window/Keyboard.hpp>
 #include <ios>
-# include <mpi.h>
+#include <mpi.h>
 #include <iostream>
 #include <cstdlib>
 #include <fstream>
@@ -13,10 +13,11 @@
 #include "cloud_of_points.hpp"
 #include "runge_kutta.hpp"
 #include "screen.hpp"
+#include "point.hpp"
 
-auto readConfigFile( std::ifstream& input )
+auto readConfigFile(std::ifstream &input)
 {
-    using point=Simulation::Vortices::point;
+    using point = Simulation::Vortices::point;
 
     int isMobile;
     std::size_t nbVortices;
@@ -28,40 +29,42 @@ auto readConfigFile( std::ifstream& input )
     std::stringstream ibuffer;
     // Lit la première ligne de commentaire :
     input.getline(buffer, maxBuffer); // Relit un commentaire
-    input.getline(buffer, maxBuffer);// Lecture de la grille cartésienne
-    sbuffer = std::string(buffer,maxBuffer);
+    input.getline(buffer, maxBuffer); // Lecture de la grille cartésienne
+    sbuffer = std::string(buffer, maxBuffer);
     ibuffer = std::stringstream(sbuffer);
     double xleft, ybot, h;
     std::size_t nx, ny;
     ibuffer >> xleft >> ybot >> nx >> ny >> h;
-    cartesianGrid = Numeric::CartesianGridOfSpeed({nx,ny}, point{xleft,ybot}, h);
+    cartesianGrid = Numeric::CartesianGridOfSpeed({nx, ny}, point{xleft, ybot}, h);
     input.getline(buffer, maxBuffer); // Relit un commentaire
     input.getline(buffer, maxBuffer); // Lit mode de génération des particules
-    sbuffer = std::string(buffer,maxBuffer);
+    sbuffer = std::string(buffer, maxBuffer);
     ibuffer = std::stringstream(sbuffer);
     int modeGeneration;
     ibuffer >> modeGeneration;
-    if (modeGeneration == 0) // Génération sur toute la grille 
+    if (modeGeneration == 0) // Génération sur toute la grille
     {
         std::size_t nbPoints;
         ibuffer >> nbPoints;
         cloudOfPoints = Geometry::generatePointsIn(nbPoints, {cartesianGrid.getLeftBottomVertex(), cartesianGrid.getRightTopVertex()});
     }
-    else 
+    else
     {
         std::size_t nbPoints;
         double xl, xr, yb, yt;
         ibuffer >> xl >> yb >> xr >> yt >> nbPoints;
-        cloudOfPoints = Geometry::generatePointsIn(nbPoints, {point{xl,yb}, point{xr,yt}});
+        cloudOfPoints = Geometry::generatePointsIn(nbPoints, {point{xl, yb}, point{xr, yt}});
     }
     // Lit le nombre de vortex :
     input.getline(buffer, maxBuffer); // Relit un commentaire
     input.getline(buffer, maxBuffer); // Lit le nombre de vortex
     sbuffer = std::string(buffer, maxBuffer);
     ibuffer = std::stringstream(sbuffer);
-    try {
-        ibuffer >> nbVortices;        
-    } catch(std::ios_base::failure& err)
+    try
+    {
+        ibuffer >> nbVortices;
+    }
+    catch (std::ios_base::failure &err)
     {
         std::cout << "Error " << err.what() << " found" << std::endl;
         std::cout << "Read line : " << sbuffer << std::endl;
@@ -69,35 +72,37 @@ auto readConfigFile( std::ifstream& input )
     }
     Simulation::Vortices vortices(nbVortices, {cartesianGrid.getLeftBottomVertex(),
                                                cartesianGrid.getRightTopVertex()});
-    input.getline(buffer, maxBuffer);// Relit un commentaire
-    for (std::size_t iVortex=0; iVortex<nbVortices; ++iVortex)
+    input.getline(buffer, maxBuffer); // Relit un commentaire
+    for (std::size_t iVortex = 0; iVortex < nbVortices; ++iVortex)
     {
         input.getline(buffer, maxBuffer);
-        double x,y,force;
+        double x, y, force;
         std::string sbuffer(buffer, maxBuffer);
         std::stringstream ibuffer(sbuffer);
         ibuffer >> x >> y >> force;
-        vortices.setVortex(iVortex, point{x,y}, force);
+        vortices.setVortex(iVortex, point{x, y}, force);
     }
-    input.getline(buffer, maxBuffer);// Relit un commentaire
-    input.getline(buffer, maxBuffer);// Lit le mode de déplacement des vortex
-    sbuffer = std::string(buffer,maxBuffer);
+    input.getline(buffer, maxBuffer); // Relit un commentaire
+    input.getline(buffer, maxBuffer); // Lit le mode de déplacement des vortex
+    sbuffer = std::string(buffer, maxBuffer);
     ibuffer = std::stringstream(sbuffer);
     ibuffer >> isMobile;
     return std::make_tuple(vortices, isMobile, cartesianGrid, cloudOfPoints);
 }
 
-
-int main( int nargs, char* argv[] )
+int main(int nargs, char *argv[])
 {
+    using point     = Geometry::Point<double> ;
     MPI_Comm global;
     int rank, nbp;
     MPI_Init(&nargs, &argv);
     MPI_Comm_dup(MPI_COMM_WORLD, &global);
     MPI_Comm_size(global, &nbp);
     MPI_Comm_rank(global, &rank);
-    char const* filename;
-    if (nargs==1)
+    int tag=4269;
+    char const *filename;
+    point p;
+    if (nargs == 1)
     {
         std::cout << "Usage : vortexsimulator <nom fichier configuration>" << std::endl;
         return EXIT_FAILURE;
@@ -107,32 +112,47 @@ int main( int nargs, char* argv[] )
     std::ifstream fich(filename);
     auto config = readConfigFile(fich);
     fich.close();
-
-    std::size_t resx=800, resy=600;
-    if (nargs>3)
-    {
-        resx = std::stoull(argv[2]);
-        resy = std::stoull(argv[3]);
-    }
-
+    
     auto vortices = std::get<0>(config);
     auto isMobile = std::get<1>(config);
-    auto grid     = std::get<2>(config);
-    auto cloud    = std::get<3>(config);
-
-    std::cout << "######## Vortex simultor ########" << std::endl << std::endl;
+    auto grid = std::get<2>(config);
+    auto cloud = std::get<3>(config);
+    //Je n'arrive à envoyer que des listes de double, donc je convertit tous les objets dans ce format
+    // Si tu arrive à envoyer directement les objets dans leur classe d'origine, c'est beaucoup plus simple
+    std::pair<std::size_t,std::size_t> sizes= grid.cellGeometry();
+    int size=std::get<0>(sizes)*std::get<1>(sizes);
+    int nb_vortices = vortices.numberOfVortices();
+    double data_vortices[3*nb_vortices];
+    for(int n =0; n<nb_vortices;n++)
+    {
+        p=vortices.getCenter(n);
+        data_vortices[3*n]=p.x;
+        data_vortices[3*n+1]=p.y;
+        data_vortices[3*n+2]=vortices.getIntensity(n);
+    }
+    std::cout << "######## Vortex simulator ########" << std::endl
+              << std::endl;
     std::cout << "Press P for play animation " << std::endl;
     std::cout << "Press S to stop animation" << std::endl;
     std::cout << "Press right cursor to advance step by step in time" << std::endl;
     std::cout << "Press down cursor to halve the time step" << std::endl;
     std::cout << "Press up cursor to double the time step" << std::endl;
-
-    grid.updateVelocityField(vortices);
-
-    Graphisme::Screen myScreen( {resx,resy}, {grid.getLeftBottomVertex(), grid.getRightTopVertex()} );
-    bool animate=false;
+    
+    grid.updateVelocityField(vortices); //receive
     double dt = 0.1;
-
+    if (rank==0)
+    {
+    std::size_t resx = 800, resy = 600;
+    if (nargs > 3)
+    {
+        resx = std::stoull(argv[2]);
+        resy = std::stoull(argv[3]);
+        
+        
+    }
+    Graphisme::Screen myScreen({resx, resy}, {grid.getLeftBottomVertex(), grid.getRightTopVertex()});
+    bool animate = false;
+    double dt = 0.1;
     
     while (myScreen.isOpen())
     {
@@ -150,37 +170,65 @@ int main( int nargs, char* argv[] )
                 // on met à jour la vue, avec la nouvelle taille de la fenêtre
                 myScreen.resize(event);
             }
-            if (sf::Keyboard::isKeyPressed(sf::Keyboard::P)) animate = true;
-            if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) animate = false;
-            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up)) dt *= 2;
-            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down)) dt /= 2;
-            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) advance = true;
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::P))
+                animate = true;
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::S))
+                animate = false;
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
+                dt *= 2;
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
+                dt /= 2;
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
+                advance = true;
         }
+        
+        MPI_Send(&dt,1,MPI_DOUBLE,1,tag,MPI_COMM_WORLD);
+        MPI_Send(grid.data(),size,MPI_DOUBLE,1,tag,MPI_COMM_WORLD);
+        MPI_Send(cloud.data(),cloud.numberOfPoints(),MPI_DOUBLE,1,tag,MPI_COMM_WORLD);
+        MPI_Send(data_vortices,nb_vortices,MPI_DOUBLE,1,tag,MPI_COMM_WORLD);
         if (animate | advance)
         {
             if (isMobile)
             {
-                cloud = Numeric::solve_RK4_movable_vortices(dt, grid, vortices, cloud);
+                
+                cloud = Numeric::solve_RK4_movable_vortices(dt, grid, vortices, cloud); //receive
             }
             else
             {
-                cloud = Numeric::solve_RK4_fixed_vortices(dt, grid, cloud);
+                cloud = Numeric::solve_RK4_fixed_vortices(dt, grid, cloud); //receive
             }
         }
         myScreen.clear(sf::Color::Black);
         std::string strDt = std::string("Time step : ") + std::to_string(dt);
-        myScreen.drawText(strDt, Geometry::Point<double>{50, double(myScreen.getGeometry().second-96)});
-        myScreen.displayVelocityField(grid, vortices);
-        myScreen.displayParticles(grid, vortices, cloud);
+        myScreen.drawText(strDt, Geometry::Point<double>{50, double(myScreen.getGeometry().second - 96)});
+        
         auto end = std::chrono::system_clock::now();
         std::chrono::duration<double> diff = end - start;
-        std::string str_fps = std::string("FPS : ") + std::to_string(1./diff.count());
-        myScreen.drawText(str_fps, Geometry::Point<double>{300, double(myScreen.getGeometry().second-96)});
+        std::string str_fps = std::string("FPS : ") + std::to_string(1. / diff.count());
+        myScreen.drawText(str_fps, Geometry::Point<double>{300, double(myScreen.getGeometry().second - 96)});
+        //Mettre ici les receives de grid vortices et cloud
+        myScreen.displayVelocityField(grid, vortices);
+        myScreen.displayParticles(grid, vortices, cloud);
         myScreen.display();
-        
-        
+    }
+    }
+    if (rank==1)
+    {
+        double* dtt=&dt;
+        double* grille=grid.data();
+        double* nuage=cloud.data();
+        while(1)
+        {
+        MPI_Recv(dtt,1,MPI_DOUBLE,0,tag,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+        MPI_Recv(grille,size,MPI_DOUBLE,0,tag,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+        MPI_Recv(nuage,cloud.numberOfPoints(),MPI_DOUBLE,0,tag,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+        MPI_Recv(data_vortices,nb_vortices,MPI_DOUBLE,0,tag,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+        //reconstruire vortices cloud et grille avec constructeur
+        //faire les calculs
+        //envoyer les résultats
+        }
     }
     MPI_Finalize();
 
     return EXIT_SUCCESS;
- }
+}
