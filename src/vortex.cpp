@@ -10,6 +10,7 @@ Vortices::computeSpeed( point const& a_point ) const -> vector
     constexpr double thresholdDist = 1.E-5;
     vector speed{0.,0.};
     auto start = std::chrono::system_clock::now();
+
     #pragma parallel for reduction(+:speed)
     for ( std::size_t iVortex=0; iVortex<3*numberOfVortices(); iVortex += 3)
     {
@@ -116,6 +117,6 @@ Vortices::computeSpeed( point const& a_point ) const -> vector
     }
     auto end= std::chrono::system_clock::now();
     std::chrono::duration<double> diff = end - start;
-    std::cout <<"Temps: " << diff.count() << std::endl;
+    //std::cout <<"Temps: " << diff.count() << std::endl;
     return speed;
 }
