@@ -117,6 +117,6 @@ Vortices::computeSpeed( point const& a_point ) const -> vector
     }
     auto end= std::chrono::system_clock::now();
     std::chrono::duration<double> diff = end - start;
-    //std::cout <<"Temps: " << diff.count() << std::endl;
+    
     return speed;
 }

@@ -170,8 +170,8 @@ int main( int nargs, char* argv[] )
         std::cout << "Press up cursor to double the time step" << std::endl;
         std::cout << "number of points : " << numberOfPoints << std::endl;
         std::cout << "number of vortices : " << numberOfVortices << std::endl;
-        double time=0;
-        int iteration=0;
+        
+    
         Graphisme::Screen myScreen( {resx,resy}, {grid.getLeftBottomVertex(), grid.getRightTopVertex()} );
         while (myScreen.isOpen()){
             bool advance = false;
@@ -214,10 +214,7 @@ int main( int nargs, char* argv[] )
             myScreen.displayParticles(grid, vortices, cloud);
             auto end = std::chrono::system_clock::now();
             std::chrono::duration<double> diff = end - start;
-            time+=diff.count();
-            iteration+=1;
             
-            std::cout<<iteration <<"Temps : " << time<<std::endl;
             std::string str_fps = std::string("FPS : ") + std::to_string(1./diff.count());
             myScreen.drawText(str_fps, Geometry::Point<double>{300, double(myScreen.getGeometry().second-96)});
             myScreen.display();
