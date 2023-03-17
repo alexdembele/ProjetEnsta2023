@@ -7,6 +7,7 @@
 #include <string>
 #include <tuple>
 #include <chrono>
+#include <omp.h>
 #include "cartesian_grid_of_speed.hpp"
 #include "vortex.hpp"
 #include "cloud_of_points.hpp"
@@ -211,7 +212,7 @@ int main( int nargs, char* argv[] )
             myScreen.displayParticles(grid, vortices, cloud);
             auto end = std::chrono::system_clock::now();
             std::chrono::duration<double> diff = end - start;
-            std::cout<<"Temps : " << diff.count()<<std::endl;
+            //std::cout<<"Temps : " << diff.count()<<std::endl;
             std::string str_fps = std::string("FPS : ") + std::to_string(1./diff.count());
             myScreen.drawText(str_fps, Geometry::Point<double>{300, double(myScreen.getGeometry().second-96)});
             myScreen.display();
