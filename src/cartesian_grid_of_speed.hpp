@@ -105,6 +105,15 @@ namespace Numeric
 
         vector computeVelocityFor( point const& p ) const;
 
+        std::size_t size() const {
+            return m_velocityField.size();
+        }
+
+        vector &operator[](std::size_t index){
+            assert(index< m_velocityField.size());
+            return m_velocityField.at(index);
+        }
+
         CartesianGridOfSpeed& operator = ( CartesianGridOfSpeed const& ) = default;
         CartesianGridOfSpeed& operator = ( CartesianGridOfSpeed     && ) = default;
 
