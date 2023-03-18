@@ -56,9 +56,9 @@ Si il y a un maillage de grande dimension et un grand nombre de particules,  ave
 
 ### VI. Notice
 
-Le code VortexSimulationQ1 contient le code de la question1. A exécuter avec: mpirun - np 2 ./.........
-Le code de la partie 2 est en commentaire dans runge_kutta mais non fonctionnel comme expliqué précedemment
-Le code de la partie 3 est dans vortexSimulation
+Le code VortexSimulationQ1 contient le code de la question1. A exécuter avec: mpirun - np 2 ./.........  
+Le code de la partie 2 est en commentaire dans runge_kutta mais non fonctionnel comme expliqué précedemment  
+Le code de la partie 3 est dans vortexSimulation  
 
 
 
