@@ -17,7 +17,7 @@ La première étape du projet est de séparer le code d'affichage des calculs en
 Résultats:  
 Les FPS sont de 40-50 dans le code non parallélisé, ils sont de 500-600 dans le code parallélisé. On a donc obtenu un speed-up d'environ 10-11 en séparant l'affichage du calcul dans notre code.
 
-### III Accélération des calculs
+### III. Accélération des calculs
 La deuxième étape est d'accélérer les calculs en les parallélisant en mémoire partagés avec openMP.
 En examinant le code d'origine, il semble que la méthode Vortices::computeSpeed est parallélisable. En effet, il y a une boucle effectuant la même tâche 9 fois sur des tourbillons différents et changeant une variable vspeed. Il faut donc utiliser une clause de réduction pour que la variable speed soit commune à tous les threads. Cependant, globalement cette parallélisation ne devrait pas améliorer le temps d'exécution. En effet, quand on regarde le code en lui même, on constate que la boucle va s'exécuter peu de fois et qu'il y a peu d'opération dans la boucle. Cette parallélisation aurait surement eu plus d'impact pour un grand nombre de vortex.  
   
@@ -41,6 +41,12 @@ Voici nos résultats:
 |7| 79| 2.4|
 |8| 79| 2.4|
   
-Le speed-up augmente jusqu'à 4 threads puis stagne. En analysant le code de la boucle de runge_kutta;, cela s'explique par le fait qu'il y a trois parties indépendantes construisant des points et vitesses à partir d'un premier point et d'une première vitesses.
+Le speed-up augmente jusqu'à 4 threads puis stagne.
+### IV. Distribution des calculs
+### V. Approche Mixte
+Nous souhaitons paralléliser le calcul de la vitesse en décomposant en sous domaine. Pour ce faire , il faut choisir comment découper en sous domaine. On travail sur un quadrillage, on peut découper selon les lignes ou les colonnes pour que ce soit "facile" de coder le découpage.  Il y aurait un thread qui distribuerait les calculs  aux autres car on ne sait pas si ils seront tous de même durée. Par exemple, si on parallélise avec 4 threads, le thread 0 distribuerait des rectangles de 10 lignes aux trois autres et actualiserait sa grille au fur et à mesure des calculs des autres. Il faut faire attention quand on envoie les sous domaines aux potentielles conditions aux limites dont on aurait besoin, quitte à employer des ghosts-cells. Avec cette stratégie maître esclave, le temps de calcul est bien réparti. Si les grilles sont de grande dimension avec de fortes chances de disparité de temps de calcul  par sous domaines il n'y aurait pas un thread qui finirait bien avant ou après les autres. Si on avait décomposer en 4 grands sous domaines, il y aurait un domaine avec plus de calcul: celui contenant les vortex. 
+
+
+
 
 
